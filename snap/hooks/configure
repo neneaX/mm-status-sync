@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# If the daemon is already running, restart it to apply new settings immediately
+if snapctl services mm-status-sync | grep -q "enabled"; then
+    snapctl restart mm-status-sync
+fi
+
+exit 0

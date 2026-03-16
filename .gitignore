@@ -1,0 +1,17 @@
+# Rust & Cargo
+/target/
+debug
+**/*.rs.bk
+Cargo.lock
+*.pdb
+**/mutants.out*/
+
+# Snapcraft
+*.snap
+/parts/
+/stage/
+/prime/
+/.snapcraft/
+
+# IDEs
+.idea/

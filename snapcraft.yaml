@@ -1,0 +1,56 @@
+name: mm-status-sync
+base: core22
+version: '0.2.0'
+summary: Automatically syncs Mattermost status and availability with webcam usage.
+description: |
+  A native, non-blocking Rust daemon that polls the Linux kernel to detect active web meetings. 
+  It updates your Mattermost status to 'In a Meeting' (DND) and flawlessly restores 
+  your previous text, emoji, and availability when finished.
+
+  **Configuration (Required)**
+  The daemon runs automatically, but you must provide your Mattermost credentials:
+  
+  `sudo snap set mm-status-sync url="https://your-mattermost-url.com"`
+  `sudo snap set mm-status-sync token="your-access-token"`
+  `sudo snap set mm-status-sync user-id="your-user-id"`
+
+  **Optional Settings**
+  `sudo snap set mm-status-sync sleep-seconds="300"`
+  `sudo snap set mm-status-sync meeting-message=" [In a meeting]"`
+  `sudo snap set mm-status-sync ignore-if-offline="true"`
+
+  **Troubleshooting**
+  View the live daemon logs to ensure it is connected:
+  `sudo snap logs -f mm-status-sync`
+
+grade: stable
+confinement: classic
+
+apps:
+  mm-status-sync:
+    command: bin/mm-status-sync
+    daemon: simple
+    restart-condition: always
+
+hooks:
+  configure:
+    passthrough:
+      host-python-check: false 
+
+parts:
+  rust-app:
+    plugin: rust
+    source: .
+    rust-channel: stable
+    build-packages:
+      - pkg-config
+      - libssl-dev
+    # ---------------------------------------------------
+    # THE CI/CD PIPELINE: Run tests before compiling
+    # ---------------------------------------------------
+    override-build: |
+      echo "🧪 Running Rust unit tests..."
+      cargo test
+      
+      echo "📦 Tests passed! Compiling release binary..."
+      craftctl default
