@@ -35,6 +35,89 @@ To build this project from source, you will need:
    ```
 
 ---
+## 🔑 Obtaining Mattermost Credentials
+
+To use this daemon, you need three pieces of information from your Mattermost server.
+
+### 1. Finding your Server URL
+This is the base URL you use to access Mattermost in your browser.
+* **Format:** `https://mattermost.example.com`
+* **Note:** Do not include a trailing slash or specific channel names.
+
+### 2. Creating a Personal Access Token (PAT)
+A Personal Access Token allows the daemon to act on your behalf safely.
+
+1.  Log in to your Mattermost web interface.
+2.  Click on your **Profile Picture** -> **Profile**.
+3.  Select **Security** from the sidebar.
+4.  Click on **Personal Access Tokens**.
+5.  Click **Create New Token** (e.g., name it `mm-status-sync`).
+6.  **Copy the Access Token** immediately. You will not be able to see it again.
+
+> **Note:** If you do not see this menu, your System Administrator may need to enable "Personal Access Tokens" in the System Console.
+
+### 3. Finding your User ID
+The User ID is a unique 26-character alphanumeric string. Because it is often hidden in the UI, use one of these three methods:
+
+#### Method A: SAML Access History (Best for Enterprise)
+If your organization uses Single Sign-On (SAML):
+1.  Go to **Profile** > **Security**.
+2.  View your **Access History**.
+3.  Your **User ID** is often explicitly listed in the session details or metadata fields on this page.
+   - e.g. `Saml {id}` under `Action`
+
+#### Method B: Browser Console (Most Reliable)
+1. Press `F12` to open Browser Dev Tools.
+2. Go to the **Network** tab.
+3. Refresh the page.
+4. Search for a request named `me`. You can filter by `/api/v4/users/me`
+5. The `id` field in the **Preview/Response** JSON is your User ID.
+   - e.g. [Get a user](https://developers.mattermost.com/api-documentation/#/operations/GetUser)
+      ``` json
+      {
+         "id": "string",
+         "create_at": -9007199254740991,
+         "update_at": -9007199254740991,
+         "delete_at": -9007199254740991,
+         "username": "string",
+         "first_name": "string",
+         "last_name": "string",
+         "nickname": "string",
+         "email": "string",
+         "email_verified": true,
+         "auth_service": "string",
+         "roles": "string",
+         "locale": "string",
+         "notify_props": {
+            "email": "string",
+            "push": "string",
+            "desktop": "string",
+            "desktop_sound": "string",
+            "mention_keys": "string",
+            "channel": "string",
+            "first_name": "string",
+            "auto_responder_message": "string",
+            "push_threads": "string",
+            "comments": "string",
+            "desktop_threads": "string",
+            "email_threads": "string"
+         },
+         "props": {},
+         "last_password_update": -9007199254740991,
+         "last_picture_update": -9007199254740991,
+         "failed_attempts": 0,
+         "mfa_active": true,
+         "timezone": {
+            "useAutomaticTimezone": "string",
+            "manualTimezone": "string",
+            "automaticTimezone": "string"
+         },
+         "terms_of_service_id": "string",
+         "terms_of_service_create_at": -9007199254740991
+         }
+      }
+      ```
+
 
 ## 🛠️ Configuration
 
