@@ -36,7 +36,7 @@ pub async fn handle_meeting_start(mm: &Mattermost<'_>, backup_file: &Path) {
     let new_text = build_meeting_text(old_text, &mm.config.meeting_message);
 
     let new_status = json!({"emoji": "meet", "text": new_text});
-    if let Err(e) = mm.update_status_and_avail(new_status, "dnd").await {
+    if let Err(e) = mm.update_status_and_avail(new_status, &mm.config.meeting_status).await {
         error!("API ERROR: Failed to set meeting status: {}", e);
     }
 }

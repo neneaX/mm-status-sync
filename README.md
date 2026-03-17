@@ -2,7 +2,7 @@
 
 Because forgetting to clear your "In a Meeting" status three hours after the call ended is a universal human experience.
 
-This lightweight, blazingly fast background daemon monitors your webcam usage (`/dev/video*`) and automatically updates your Mattermost status and availability. When the camera turns on, it appends a customizable message (like " - In a meeting") to your current status and sets your availability to "Do Not Disturb" (DND). When the camera turns off, your previous status **and availability** (Online, Away, etc.) are restored exactly as they were.
+This lightweight, blazingly fast background daemon monitors your webcam usage (`/dev/video*`) and automatically updates your Mattermost status and availability. When the camera turns on, it appends a customizable message (like " [In a meeting]") to your current status and sets your availability to "Do Not Disturb" (DND) or another chosen one. When the camera turns off, your previous status **and availability** (Online, Away, etc.) are restored exactly as they were.
 
 ## ✨ Features
 * **Fully Configurable:** Change your tokens, sync interval, and custom away messages on the fly using native `snap set` commands.
@@ -137,11 +137,16 @@ sudo snap set mm-status-sync user-id="your-user-id"
 ### Optional Settings
 You can fine-tune the daemon's behavior. If you do not set these, it will fall back to the default values.
 ```bash
-# Check the camera every X seconds (Default: 300)
+# Check the camera every X seconds (Default: 300, Minimum: 10)
 sudo snap set mm-status-sync sleep-seconds="60"
 
 # Change the appended status message (Default: " [In a meeting]")
 sudo snap set mm-status-sync meeting-message="🎥 On a call"
+
+# Change the status availability (Default: "dnd")
+# Available options: online|away|offline|dnd
+# https://developers.mattermost.com/api-documentation/#/operations/UpdateUserStatus#request-body
+sudo snap set mm-status-sync meeting-status="online"
 
 # Prevent the daemon from updating your status if you are currently marked as "Offline" (Default: true)
 sudo snap set mm-status-sync ignore-if-offline="true"
