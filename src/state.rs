@@ -1,3 +1,4 @@
+use chrono::Utc;
 use log::{error, info};
 use serde_json::{json, Value};
 use std::path::Path;
@@ -6,6 +7,20 @@ use tokio::fs;
 use crate::mattermost::Mattermost;
 
 // --- Pure Logic Helpers ---
+
+/// Returns true if the status has a non-zero `expires_at` that is already in the past.
+/// Mattermost uses "0001-01-01T00:00:00Z" as a sentinel for "no expiry".
+pub fn has_status_expired(status: &Value) -> bool {
+    match status["expires_at"].as_str() {
+        Some(expires_at) if !expires_at.is_empty() && !expires_at.starts_with("0001-01-01") => {
+            chrono::DateTime::parse_from_rfc3339(expires_at)
+                .map(|expiry| expiry < Utc::now())
+                .unwrap_or(false)
+        }
+        _ => false,
+    }
+}
+
 pub fn build_meeting_text(old_text: &str, meeting_message: &str) -> String {
     if !old_text.contains(meeting_message) {
         format!("{} {}", old_text, meeting_message).trim().to_string()
@@ -54,9 +69,18 @@ pub async fn handle_meeting_end(mm: &Mattermost<'_>, backup_file: &Path) {
 
     match fs::read_to_string(backup_file).await {
         Ok(backup_str) => {
-            if let Ok(prev_status) = serde_json::from_str::<Value>(&backup_str) {
+            if let Ok(mut prev_status) = serde_json::from_str::<Value>(&backup_str) {
+                // If the saved status had a timer that already expired while we were in the
+                // meeting, Mattermost will have already cleared it server-side. Restoring it
+                // would bring it back as a permanent status — restore blank instead.
+                if has_status_expired(&prev_status) {
+                    info!("RESTORE: Saved status had already expired. Restoring to blank.");
+                    let saved_avail = prev_status["availability"].as_str().unwrap_or("online").to_string();
+                    prev_status = json!({"emoji": "", "text": "", "availability": saved_avail});
+                }
+
                 let saved_avail = prev_status["availability"].as_str().unwrap_or("online").to_string();
-                
+
                 if let Err(e) = mm.update_status_and_avail(prev_status, &saved_avail).await {
                     error!("API ERROR: Failed to restore status: {}", e);
                 } else {
@@ -89,6 +113,31 @@ mod tests {
         let old = "Focusing [In a meeting]";
         let msg = "[In a meeting]";
         assert_eq!(build_meeting_text(old, msg), "Focusing [In a meeting]");
+    }
+
+    #[test]
+    fn test_has_status_expired_with_past_timestamp() {
+        let expired = json!({"emoji": "fork_and_knife", "text": "Out for lunch", "expires_at": "2000-01-01T12:00:00Z"});
+        assert!(has_status_expired(&expired));
+    }
+
+    #[test]
+    fn test_has_status_expired_with_future_timestamp() {
+        let not_expired = json!({"emoji": "fork_and_knife", "text": "Out for lunch", "expires_at": "2099-01-01T12:00:00Z"});
+        assert!(!has_status_expired(&not_expired));
+    }
+
+    #[test]
+    fn test_has_status_expired_with_zero_sentinel() {
+        // Mattermost's sentinel value for "no expiry"
+        let no_expiry = json!({"emoji": "sword", "text": "Focusing", "expires_at": "0001-01-01T00:00:00Z"});
+        assert!(!has_status_expired(&no_expiry));
+    }
+
+    #[test]
+    fn test_has_status_expired_with_no_field() {
+        let no_expiry = json!({"emoji": "sword", "text": "Focusing"});
+        assert!(!has_status_expired(&no_expiry));
     }
 
     #[tokio::test]

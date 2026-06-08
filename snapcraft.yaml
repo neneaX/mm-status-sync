@@ -1,6 +1,6 @@
 name: mm-status-sync
 base: core22
-version: '0.2.0'
+version: '0.2.1'
 summary: Automatically syncs Mattermost status and availability with webcam usage.
 description: |
   A native, non-blocking Rust daemon that polls the Linux kernel to detect active web meetings. 
