@@ -39,7 +39,13 @@ pub async fn handle_meeting_start(mm: &Mattermost<'_>, backup_file: &Path) {
         return; 
     }
 
-    let current_state = mm.get_current_state().await.unwrap_or_else(|_| json!({"emoji": "", "text": "", "availability": "online"}));
+    let mut current_state = mm.get_current_state().await.unwrap_or_else(|_| json!({"emoji": "", "text": "", "availability": "online"}));
+
+    // Mattermost keeps expired statuses in the user props, so treat them as blank.
+    if has_status_expired(&current_state) {
+        let saved_avail = current_state["availability"].as_str().unwrap_or("online").to_string();
+        current_state = json!({"emoji": "", "text": "", "availability": saved_avail});
+    }
     
     if let Err(e) = fs::write(backup_file, current_state.to_string()).await {
         error!("BACKUP FATAL: Could not save file ({}). Aborting sync.", e);
